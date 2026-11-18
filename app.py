@@ -380,6 +380,19 @@ BASE = """
   .best { background: #dcfce7; color: #166534; font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 99px; }
   .muted { color: #64748b; font-size: 13px; }
   h3.sec { margin: 4px 0 10px; font-size: 16.5px; }
+  .tl-day { display: flex; gap: 14px; }
+  .tl-rail { flex: 0 0 56px; display: flex; flex-direction: column; align-items: center; }
+  .tl-badge { width: 54px; background: #0f172a; color: #fff; border-radius: 12px; text-align: center;
+              padding: 6px 0 5px; line-height: 1.05; z-index: 1; box-shadow: 0 1px 3px rgba(15,23,42,.25); }
+  .tl-badge .m { font-size: 10.5px; font-weight: 700; letter-spacing: 1.2px; color: #7dd3fc; }
+  .tl-badge .d { font-size: 21px; font-weight: 800; }
+  .tl-badge.none { background: #94a3b8; }
+  .tl-line { flex: 1; width: 2.5px; background: #e2e8f0; margin-top: 5px; border-radius: 2px; }
+  .tl-day:last-child .tl-line { display: none; }
+  .tl-body { flex: 1; min-width: 0; padding-bottom: 20px; }
+  .tl-date-label { font-weight: 750; font-size: 15.5px; margin: 5px 0 9px; }
+  .tl-item { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px 12px;
+             margin-bottom: 9px; display: flex; gap: 12px; align-items: center; }
   @media (max-width: 760px) {
     .shell { flex-direction: column; }
     aside { width: 100%; flex: none; min-height: 0; position: static; }
@@ -519,32 +532,45 @@ TRIP_PAGE = """
 </div>
 
 <div class="card">
-  <h3 class="sec">{{ plan.name }} — items</h3>
-  {% for r in rows %}
-  <div class="item">
-    {% if r.logo %}
-    <div class="logo-tile"><img src="/static/logos/{{ r.logo }}" alt=""></div>
-    {% else %}
-    <div class="logo-tile mono" style="background:{{ categories[r.item.category].color }}">{{ mono[r.item.category] }}</div>
-    {% endif %}
-    <div>
-      <div class="tt">{{ r.item.title }}
-        <span class="chip cat" style="background:{{ categories[r.item.category].color }}">{{ categories[r.item.category].label }}</span>
-        <span class="chip {{ r.item.status }}">{{ "Booked" if r.item.status == "booked" else "Idea" }}</span>
+  <h3 class="sec">{{ plan.name }} — itinerary</h3>
+  <div class="timeline">
+  {% for g in timeline %}
+    <div class="tl-day">
+      <div class="tl-rail">
+        <div class="tl-badge {% if g.label == 'No date yet' %}none{% endif %}"><div class="m">{{ g.badge_m }}</div><div class="d">{{ g.badge_d }}</div></div>
+        <div class="tl-line"></div>
       </div>
-      <div class="mt">
-        {% if r.item.start_date %}{{ r.item.start_date }}{% if r.item.end_date and r.item.end_date != r.item.start_date %} → {{ r.item.end_date }}{% endif %} · {% endif %}
-        {% if r.item.quantity != 1 %}{{ r.item.quantity }} × {{ fmt_money(r.item.cost_cents) }} · {% endif %}
-        {% if r.item.notes %}{{ r.item.notes }}{% endif %}
-        {% if r.item.link %} · <a href="{{ r.item.link }}" target="_blank" rel="noopener">link</a>{% endif %}
-      </div>
-      <div class="acts"><a href="/item/{{ r.item.id }}/edit">edit</a> ·
-        <form class="inline" method="post" action="/item/{{ r.item.id }}/delete" onsubmit="return confirm('Delete this item?')"><button type="submit" style="background:none;border:none;color:#b91c1c;cursor:pointer;font-size:12px;padding:0">delete</button></form>
+      <div class="tl-body">
+        <div class="tl-date-label">{{ g.label }}</div>
+        {% for r in g.rows %}
+        <div class="tl-item">
+          {% if r.logo %}
+          <div class="logo-tile"><img src="/static/logos/{{ r.logo }}" alt=""></div>
+          {% else %}
+          <div class="logo-tile mono" style="background:{{ categories[r.item.category].color }}">{{ mono[r.item.category] }}</div>
+          {% endif %}
+          <div>
+            <div class="tt">{{ r.item.title }}
+              <span class="chip cat" style="background:{{ categories[r.item.category].color }}">{{ categories[r.item.category].label }}</span>
+              <span class="chip {{ r.item.status }}">{{ "Booked" if r.item.status == "booked" else "Idea" }}</span>
+            </div>
+            <div class="mt">
+              {% if r.span %}{{ r.span }} · {% endif %}
+              {% if r.item.quantity != 1 %}{{ r.item.quantity }} × {{ fmt_money(r.item.cost_cents) }} · {% endif %}
+              {% if r.item.notes %}{{ r.item.notes }}{% endif %}
+              {% if r.item.link %} · <a href="{{ r.item.link }}" target="_blank" rel="noopener">link</a>{% endif %}
+            </div>
+            <div class="acts"><a href="/item/{{ r.item.id }}/edit">edit</a> ·
+              <form class="inline" method="post" action="/item/{{ r.item.id }}/delete" onsubmit="return confirm('Delete this item?')"><button type="submit" style="background:none;border:none;color:#b91c1c;cursor:pointer;font-size:12px;padding:0">delete</button></form>
+            </div>
+          </div>
+          <div class="cost">{{ fmt_money(r.total) }}</div>
+        </div>
+        {% endfor %}
       </div>
     </div>
-    <div class="cost">{{ fmt_money(r.total) }}</div>
-  </div>
   {% endfor %}
+  </div>
   {% if not rows %}<p class="muted">Nothing here yet.</p>{% endif %}
   <div style="margin-top:13px"><a class="btn" href="/plan/{{ plan.id }}/items/new">+ Add item</a></div>
 </div>
@@ -735,8 +761,36 @@ def trip_page(trip_id):
         items = plan_items(plan["id"])
         by_cat, booked, idea = plan_breakdown(plan["id"])
         total = booked + idea
+        rows = [{"item": i, "logo": logo_for(i["title"]), "total": item_total(i)} for i in items]
+        groups = {}
+        order = []
+        for r in rows:
+            key = r["item"]["start_date"] or ""
+            if key not in groups:
+                groups[key] = []
+                order.append(key)
+            s, e = dparse(r["item"]["start_date"]), dparse(r["item"]["end_date"])
+            r["span"] = ""
+            if s and e and e > s:
+                nights = (e - s).days
+                r["span"] = "→ {} · {} night{}".format(e.isoformat(), nights, "s" if nights != 1 else "")
+            groups[key].append(r)
+        timeline = []
+        for key in order:
+            d = dparse(key)
+            timeline.append(
+                {
+                    "badge_m": d.strftime("%b").upper() if d else "—",
+                    "badge_d": str(d.day) if d else "•",
+                    "label": "{}, {} {}, {}".format(d.strftime("%A"), d.strftime("%B"), d.day, d.year)
+                    if d
+                    else "No date yet",
+                    "rows": groups[key],
+                }
+            )
         ctx.update(
-            rows=[{"item": i, "logo": logo_for(i["title"]), "total": item_total(i)} for i in items],
+            rows=rows,
+            timeline=timeline,
             by_cat=by_cat, booked=booked, idea=idea, total=total,
             per_person=int(total / trip["travelers"]) if trip["travelers"] else total,
             per_day=int(total / ctx["days"]) if ctx["days"] else total,
