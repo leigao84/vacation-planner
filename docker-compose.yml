@@ -1,0 +1,12 @@
+services:
+  vacation-planner:
+    build: .
+    image: vacation-planner:local
+    container_name: vacation-planner
+    restart: unless-stopped
+    ports:
+      - "8089:8089"
+    volumes:
+      - ./data:/data
+    environment:
+      - TZ=America/Los_Angeles

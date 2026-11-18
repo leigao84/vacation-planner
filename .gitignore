@@ -1,0 +1,7 @@
+data/
+__pycache__/
+*.pyc
+# Brand logos are not distributed with this repo (trademark/copyright).
+# The app falls back to colored category tiles when a logo file is absent.
+static/logos/*
+!static/logos/.gitkeep
