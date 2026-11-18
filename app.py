@@ -141,9 +141,12 @@ def item_total(item):
 
 
 def plan_items(plan_id):
+    # Dated items first, by date; within a day, flights lead (you fly before
+    # you check in or pick up the car), then creation order.
     return get_db().execute(
         "SELECT * FROM items WHERE plan_id = ? ORDER BY "
-        "CASE WHEN start_date = '' THEN 1 ELSE 0 END, start_date, id",
+        "CASE WHEN start_date = '' THEN 1 ELSE 0 END, start_date, "
+        "CASE WHEN category = 'flight' THEN 0 ELSE 1 END, id",
         (plan_id,),
     ).fetchall()
 
