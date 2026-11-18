@@ -23,6 +23,8 @@ CATEGORIES = {
     "flight":   {"label": "Flights",    "color": "#2563eb"},
     "hotel":    {"label": "Hotels",     "color": "#7c3aed"},
     "car":      {"label": "Car",        "color": "#ea580c"},
+    "train":    {"label": "Train",      "color": "#0f766e"},
+    "bus":      {"label": "Bus",        "color": "#ca8a04"},
     "activity": {"label": "Activities", "color": "#16a34a"},
     "food":     {"label": "Food",       "color": "#db2777"},
     "other":    {"label": "Other",      "color": "#64748b"},
@@ -146,7 +148,7 @@ def plan_items(plan_id):
     return get_db().execute(
         "SELECT * FROM items WHERE plan_id = ? ORDER BY "
         "CASE WHEN start_date = '' THEN 1 ELSE 0 END, start_date, "
-        "CASE WHEN category = 'flight' THEN 0 ELSE 1 END, id",
+        "CASE WHEN category = 'flight' THEN 0 WHEN category = 'train' THEN 1 ELSE 2 END, id",
         (plan_id,),
     ).fetchall()
 
@@ -723,7 +725,7 @@ ITEM_FORM = """
 </div>
 """
 
-MONO = {"flight": "FL", "hotel": "HT", "car": "CR", "activity": "AC", "food": "FD", "other": "OT"}
+MONO = {"flight": "FL", "hotel": "HT", "car": "CR", "train": "TR", "bus": "BU", "activity": "AC", "food": "FD", "other": "OT"}
 
 
 # ---------------------------------------------------------------- routes
